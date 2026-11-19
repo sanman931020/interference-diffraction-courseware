@@ -1,0 +1,50 @@
+/* 互動模擬樣式（只作用於 .sim） */
+.sim { --sim-r: 14px; position: relative; display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 1px solid var(--line, #d9dee8); border-radius: var(--sim-r); background: var(--surface, #fff); color: var(--text, #1b2030); min-width: 0; }
+.sim * { box-sizing: border-box; }
+.sim-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.sim-title { font-weight: 800; font-size: 1.02rem; letter-spacing: .01em; }
+.sim-status { font-size: .85rem; color: var(--muted, #6b7385); font-variant-numeric: tabular-nums; }
+.sim-body { display: flex; gap: 14px; min-width: 0; }
+.sim-split > .sim-main { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.sim-split > .sim-side { flex: 0 0 260px; min-width: 0; display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 12px; background: var(--surface-2, #eef1f6); }
+.sim-split-narrow > .sim-side { flex-basis: 200px; }
+@media (max-width: 760px) { .sim-body.sim-split { flex-direction: column; } .sim-split > .sim-side { flex-basis: auto; } }
+.sim-side-title { font-weight: 800; font-size: .9rem; }
+.sim-canvas-wrap { position: relative; width: 100%; min-width: 0; }
+.sim-canvas { display: block; border-radius: 10px; touch-action: manipulation; }
+.sim-graphs .sim-canvas { border-radius: 8px; }
+.sim-tag { position: absolute; right: 8px; top: 8px; padding: 3px 9px; border-radius: 999px; font-size: .72rem; font-weight: 700; letter-spacing: .02em; background: color-mix(in srgb, var(--warn, #d99012) 18%, var(--surface, #fff)); color: var(--text, #1b2030); border: 1px solid color-mix(in srgb, var(--warn, #d99012) 55%, transparent); pointer-events: none; }
+.sim-controls, .sim-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sim-row > .btn { flex: 1 1 0; }
+.sim-lbl { font-size: .85rem; color: var(--muted, #6b7385); font-weight: 700; }
+.sim-hint { font-size: .82rem; color: var(--muted, #6b7385); line-height: 1.5; }
+.sim-readout { font-size: .9rem; padding: 8px 12px; border-radius: 10px; background: var(--surface-2, #eef1f6); font-variant-numeric: tabular-nums; line-height: 1.55; }
+.sim-side .sim-readout { background: var(--surface, #fff); }
+.sim-caption { font-size: .95rem; padding: 10px 14px; border-radius: 10px; background: var(--surface-2, #eef1f6); border-left: 4px solid var(--accent, #3b6cf6); line-height: 1.55; min-height: 2.6em; }
+.sim-cap-id { display: inline-block; margin-right: 8px; padding: 1px 8px; border-radius: 6px; background: var(--accent, #3b6cf6); color: #fff; font-size: .78rem; font-weight: 800; vertical-align: 1px; }
+.sim-slider { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; align-items: center; font-size: .86rem; }
+.sim-slider-label { font-weight: 600; }
+.sim-slider-val { font-weight: 800; font-variant-numeric: tabular-nums; color: var(--accent, #3b6cf6); }
+.sim-slider input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--accent, #3b6cf6); height: 22px; }
+.sim-timeline { flex: 1 1 160px; accent-color: var(--accent, #3b6cf6); min-width: 120px; }
+.sim-time { font-size: .82rem; color: var(--muted, #6b7385); font-variant-numeric: tabular-nums; min-width: 86px; }
+.sim-seg { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--surface-2, #eef1f6); border: 1px solid var(--line, #d9dee8); gap: 2px; flex-wrap: wrap; }
+.sim-seg button { border: 0; background: transparent; color: var(--text, #1b2030); font: inherit; font-size: .86rem; font-weight: 700; padding: 6px 12px; border-radius: 8px; cursor: pointer; transition: background .15s, color .15s; }
+.sim-seg button:hover { background: color-mix(in srgb, var(--accent, #3b6cf6) 10%, transparent); }
+.sim-seg button.on { background: var(--accent, #3b6cf6); color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+.sim-seg button:focus-visible { outline: 2px solid var(--accent, #3b6cf6); outline-offset: 2px; }
+.sim-shots { display: flex; gap: 6px; flex-wrap: wrap; }
+.sim-shot { border: 1px solid var(--line, #d9dee8); background: var(--surface, #fff); color: var(--text, #1b2030); font: inherit; font-size: .8rem; font-weight: 700; border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+.sim-shot.on { background: var(--accent, #3b6cf6); border-color: var(--accent, #3b6cf6); color: #fff; }
+.sim-adv { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 12px; border: 1px dashed var(--line, #d9dee8); }
+.sim-fixed { font-size: .8rem; color: var(--muted, #6b7385); line-height: 1.5; }
+.sim-fixed summary { cursor: pointer; font-weight: 700; }
+/* 若主樣式尚未提供 .btn，這裡給最低限度樣式 */
+.sim .btn { font: inherit; font-size: .88rem; font-weight: 700; padding: 8px 14px; border-radius: 10px; border: 1px solid var(--line, #d9dee8); background: var(--surface, #fff); color: var(--text, #1b2030); cursor: pointer; transition: transform .08s, background .15s, border-color .15s; }
+.sim .btn:hover { border-color: var(--accent, #3b6cf6); }
+.sim .btn:active { transform: translateY(1px); }
+.sim .btn.primary { background: var(--accent, #3b6cf6); border-color: var(--accent, #3b6cf6); color: #fff; }
+.sim .btn.ghost { background: transparent; }
+.sim .btn.on { background: color-mix(in srgb, var(--accent, #3b6cf6) 14%, transparent); border-color: var(--accent, #3b6cf6); }
+.sim .btn:disabled { opacity: .5; cursor: not-allowed; }
+.sim .btn:focus-visible { outline: 2px solid var(--accent, #3b6cf6); outline-offset: 2px; }

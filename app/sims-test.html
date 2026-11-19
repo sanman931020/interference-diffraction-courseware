@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>模擬測試頁</title>
+<style>
+  :root { --bg:#f5f7fb; --surface:#fff; --surface-2:#eef2f8; --text:#172033; --muted:#667085; --line:#dbe1ea; --accent:#3a63f3; --accent-2:#e2557b; --good:#18a06c; --warn:#d8900f; --bad:#d64545; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1420; --surface:#171d2b; --surface-2:#1f2738; --text:#e8ecf4; --muted:#9aa4b8; --line:#2c3549; --accent:#6d8dff; --accent-2:#ff7aa0; } }
+  body { margin:0; padding:16px; background:var(--bg); color:var(--text); font-family: "Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif; }
+  h2 { font-size: 1rem; margin: 28px 0 8px; }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  #log { font: 12px/1.5 monospace; white-space: pre-wrap; background: var(--surface-2); padding: 10px; border-radius: 10px; max-height: 200px; overflow: auto; }
+</style>
+<link rel="stylesheet" href="css/sims.css?v=9">
+</head>
+<body>
+<div class="wrap">
+  <h1>模擬測試頁</h1>
+  <div id="log"></div>
+  <h2>1 rope</h2><div id="s-rope"></div>
+  <h2>2 superposeAnim</h2><div id="s-anim"></div>
+  <h2>3 water（allowLines, advanced）</h2><div id="s-water"></div>
+  <h2>4a doubleSlitModel</h2><div id="s-dsm"></div>
+  <h2>4b doubleSlitPattern（core）</h2><div id="s-dsp"></div>
+  <h2>4c doubleSlitPattern（advanced, startOn）</h2><div id="s-dsp2"></div>
+  <h2>5 singleSlit（compare, advanced）</h2><div id="s-ss"></div>
+  <h2>6 thinFilm（advanced）</h2><div id="s-tf"></div>
+</div>
+<script src="js/sims/common.js?v=9"></script>
+<script src="js/sims/rope.js?v=9"></script>
+<script src="js/sims/superpose-anim.js?v=9"></script>
+<script src="js/sims/water.js?v=9"></script>
+<script src="js/sims/doubleslit.js?v=9"></script>
+<script src="js/sims/singleslit.js?v=9"></script>
+<script src="js/sims/thinfilm.js?v=9"></script>
+<script>
+  var L = document.getElementById('log');
+  function log(name) { return function (a, d) { L.textContent = name + ' ' + a + ' ' + JSON.stringify(d) + '\n' + L.textContent; }; }
+  window.ctrls = {
+    rope: Sims.rope.mount(document.getElementById('s-rope'), { log: log('rope') }),
+    anim: Sims.superposeAnim.mount(document.getElementById('s-anim'), { log: log('anim') }),
+    water: Sims.water.mount(document.getElementById('s-water'), { log: log('water'), allowLines: true, mode: 'advanced' }),
+    dsm: Sims.doubleSlitModel.mount(document.getElementById('s-dsm'), { log: log('dsm'), onSelect: function (p) { console.log('select', p); } }),
+    dsp: Sims.doubleSlitPattern.mount(document.getElementById('s-dsp'), { log: log('dsp') }),
+    dsp2: Sims.doubleSlitPattern.mount(document.getElementById('s-dsp2'), { log: log('dsp2'), mode: 'advanced', startOn: true }),
+    ss: Sims.singleSlit.mount(document.getElementById('s-ss'), { log: log('ss'), compare: true, mode: 'advanced' }),
+    tf: Sims.thinFilm.mount(document.getElementById('s-tf'), { log: log('tf'), mode: 'advanced' })
+  };
+</script>
+</body>
+</html>
