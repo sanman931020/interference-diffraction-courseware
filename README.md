@@ -1,5 +1,8 @@
 # 干涉與繞射　線上互動教材
 
+- **公開網站**：https://sanman931020.github.io/interference-diffraction-courseware/
+- **原始碼**：https://github.com/sanman931020/interference-diffraction-courseware
+
 高一必修物理「干涉與繞射」（3 節 × 50 分鐘）的線上互動教材。內容整合了原始的 10 份文件（01–08、10），並補齊了缺漏的題目。
 
 ## 開啟方式
@@ -59,7 +62,12 @@
   - 教案與分節指引、參考答案與成功規準、學習困難引導表、雙向細目表。
   - 匯入多位學生的 JSON 紀錄後，可合併檢視並匯出 CSV。
   - AI 設定、交付檢核清單、投影模式。
-- **介面**：支援深色模式與手機版（375px 寬已測試）。
+- **介面**：支援深色模式與手機、平板版（375px、768px 寬已測試）；首頁與登入頁有淡淡的草寫浮水印「1127AIark San Man-Wu」（Great Vibes 字體，SIL OFL 授權，已存於本機）。
+- **旁白朗讀**：36 秒疊加動畫可開啟瀏覽器內建語音，依鏡頭朗讀 07B 旁白。
+
+## 部署
+
+推送到 `main` 後，GitHub Actions（`.github/workflows/pages.yml`）會先執行題庫驗證，再把 `app/` 發布到 GitHub Pages。
 
 ## 修改題目
 

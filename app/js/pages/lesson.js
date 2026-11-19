@@ -12,7 +12,33 @@
       const ctl = Sims[name].mount(el, Object.assign({ log: (a, d) => Store.log(stepId || name, name + ':' + a, d), mode: 'core' }, opts || {}));
       App.cleanups.push(() => { try { ctl && ctl.destroy(); } catch (e) { } });
       return ctl;
-    } catch (e) { console.error(e); el.append(UI.fb('bad', '模擬發生錯誤，可改用靜態備援圖。')); return null; }
+    } catch (e) { console.error(e); el.append(P.simFallback(name)); return null; }
+  };
+
+  /* 模擬無法執行時的靜態備援（07A、07B：關鍵畫面備援） */
+  P.simFallback = function (name) {
+    const sb = ['storyboard_01', 'storyboard_02', 'storyboard_03', 'storyboard_04', 'storyboard_05'];
+    const box = h('div', { class: 'stack' }, UI.fb('warn', '此裝置無法執行互動模擬，以下改用靜態備援圖。'));
+    if (name === 'rope' || name === 'superposeAnim') box.append(h('div', { class: 'grid g3' }, (name === 'rope' ? ['storyboard_01', 'storyboard_02', 'storyboard_03'] : sb).map(id => UI.img(id))));
+    else { const fig = { doubleSlitModel: 'bdModel', doubleSlitPattern: 'bdModel', singleSlit: 'subsources', thinFilm: 'filmSection', water: 'waterAB' }[name]; if (fig) box.append(h('div', { class: 'q-fig', html: FIGS.get(fig) })); }
+    return box;
+  };
+
+  /* 07B：旁白同時作字幕 → 以瀏覽器內建語音朗讀各鏡旁白（免費、離線可用，依裝置而定） */
+  P.narration = function (ctl) {
+    const lines = [[0, '在理想線性介質中，兩個相同脈衝正相向傳播。'], [6, '同一位置的位移相加。同向重疊時，這裡的合成位移變大。'], [14, '通過之後，兩個脈衝仍各自向原方向傳播。'], [20, '改成等大反向時，位移抵銷，完全重疊當下合成位移為零。'], [28, '零位移只描述這一瞬間；不代表波或能量永久消失。']];
+    let on = false, last = -1, timer = null, prevT = 0;
+    const btn = h('button', { class: 'btn sm', type: 'button' }, '🔊 開啟旁白朗讀');
+    const tick = () => {
+      const t = (ctl.getState() || {}).t || 0;
+      if (t < prevT - 0.5) last = -1;
+      prevT = t;
+      let k = -1; lines.forEach(([s], i) => { if (t >= s) k = i; });
+      if (k !== last && k >= 0 && t - lines[k][0] < 1.2) { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(lines[k][1]); u.lang = 'zh-TW'; u.rate = 1.05; speechSynthesis.speak(u); last = k; }
+    };
+    btn.onclick = () => { on = !on; btn.textContent = on ? '🔇 關閉旁白朗讀' : '🔊 開啟旁白朗讀'; if (on) { last = -1; timer = setInterval(tick, 250); Store.log('anim', 'narration_on'); } else { clearInterval(timer); speechSynthesis.cancel(); } };
+    App.cleanups.push(() => { clearInterval(timer); try { speechSynthesis.cancel(); } catch (e) { } });
+    return h('div', { class: 'row' }, btn, h('span', { class: 'muted', style: { fontSize: '.82rem' } }, '旁白與字幕相同；播放動畫時依鏡頭朗讀。'));
   };
 
   P.stepDone = function (lesson, st) {
@@ -24,11 +50,24 @@
     if (ok) Store.markDone(st.id);
     return ok;
   };
+  P.answerText = function (a) {
+    if (!a) return '';
+    if (a.revisedNext) return a.revisedNext;
+    if (a.revision) return a.revision;
+    if (a.cer) return `主張：${a.cer.claim}
+證據：${a.cer.evidence}
+推理：${a.cer.reasoning}`;
+    if (a.f1) return `來源：${a.sourceText || ''}
+特徵一：${a.f1}
+特徵二：${a.f2}`;
+    return a.draft || a.text || '';
+  };
   P.lessonProgress = function (lesson) {
     const n = lesson.steps.filter(s => P.stepDone(lesson, s)).length;
     return Math.round(n / lesson.steps.length * 100);
   };
 
+  P.diffHint = diffHint;
   function diffHint(key, stepId) {
     const d = TEACH.diffs.find(x => x.key === key); if (!d) return null;
     let lv = 0;
@@ -55,17 +94,20 @@
     if (p.fig) inner.append(h('div', { class: 'card flat q-fig', style: { maxWidth: 'none' }, html: FIGS.get(p.fig) }));
     if (p.img) inner.append(UI.img(p.img, { onOpen: a => { Store.log(st.id, 'zoom', { id: a.id }); if (p.evidence) Store.addEvidence({ id: a.id, kind: a.kind, title: a.title }); } }));
     if (p.gallery) inner.append(h('div', { class: 'grid g2' }, p.gallery.map(id => UI.img(id))));
+    if (p.mine) inner.append(h('div', { class: 'card' }, h('h3', null, '回看我的紀錄'), p.mine.map(id => { const w = wsById(id); const a = Store.ans(id); const txt = P.answerText(a);
+      return h('div', { class: 'q-part' }, h('b', null, w.no + '　' + w.title.replace(/^.+?：/, '')), txt ? h('p', { style: { whiteSpace: 'pre-wrap', margin: '6px 0 0', fontSize: '.9rem' } }, txt) : h('p', { class: 'muted', style: { margin: '6px 0 0' } }, '尚未作答')); })));
     if (p.sim && !gated) {
       const s = h('div'); inner.append(s);
       if (p.note) inner.append(UI.fb('info', p.note));
       const opts = Object.assign({}, p.opts || {});
       if (p.sim === 'doubleSlitPattern') opts.startOn = false;
       ctxRef.sim = P.mountSim(s, p.sim, opts, st.id);
+      if (p.sim === 'superposeAnim' && ctxRef.sim && 'speechSynthesis' in window) inner.append(P.narration(ctxRef.sim));
       if (p.sim === 'water' || p.sim === 'doubleSlitPattern' || p.sim === 'singleSlit') Store.addEvidence({ id: 'model-' + p.sim, kind: 'model', title: { water: '水波干涉模擬', doubleSlitPattern: '雙狹縫理想模型', singleSlit: '單狹縫理想模型' }[p.sim] });
     }
     if (p.after && p.after.img) {
       const w = st.ws && st.ws[0];
-      if (w && Store.ans(w).done) inner.append(h('div', null, h('h4', null, '對照：兩種完全重疊的比較'), UI.img(p.after.img)));
+      if (w && Store.ans(w).done) inner.append(h('div', null, h('h4', null, '對照：兩種完全重疊的比較'), UI.img(p.after.img), p.after.note ? UI.fb('info', p.after.note) : null));
       else inner.append(h('div', { class: 'card flat muted', style: { fontSize: '.88rem' } }, '完成本題後，這裡會出現「兩種完全重疊的比較」圖供你修訂。'));
     }
     if (gated) {
@@ -108,7 +150,7 @@
         h('details', { class: 'cond' }, h('summary', null, '成立條件與易混淆處'), h('p', { style: { marginTop: '8px' } }, n.cond)),
         h('div', { class: 'ref' }, '查核依據：', h('a', { href: n.ref.url, target: '_blank', rel: 'noopener' }, n.ref.text)),
         h('div', { class: 'ref' }, '銜接：' + n.link)),
-      h('div', { class: 'stack sticky' }, st.fig ? h('div', { class: 'card flat q-fig', style: { maxWidth: 'none' }, html: FIGS.get(st.fig) }) : null,
+      h('div', { class: 'stack sticky' }, [].concat(st.fig || []).map(f => h('div', { class: 'card flat q-fig', style: { maxWidth: 'none' }, html: FIGS.get(f) })),
         h('div', { class: 'card' }, h('h3', null, '讀完檢核'), checks)));
   };
 

@@ -20,7 +20,7 @@
     { id: 'hubble_spikes', kind: 'real', lesson: 5, title: '望遠鏡影像的繞射尖峰', src: 'assets/img/hubble_spikes.jpg', author: 'ESA/Hubble & NASA', license: 'CC BY 4.0', url: W + 'A_slice_of_Sagittarius.jpg', use: '繞射科技情境；尖峰不是恆星真實外形。' },
     { id: 'newton_rings', kind: 'real', lesson: 5, title: '牛頓環', src: 'assets/img/newton_rings.jpg', author: 'Ulfbastel', license: 'Public Domain', url: W + 'Newton_rings.jpg', use: '薄膜（空氣膜）干涉延伸現象。' },
     // 本教材自製（07B）
-    { id: 'pulse_compare', kind: 'model', lesson: 1, title: '兩種完全重疊的比較', src: 'assets/img/doc/pulse_compare.png', author: '本教材自製（07B 圖片需求腳本）', license: '本教材自製', use: '第1節疊加原理說明與學生修訂預測。' },
+    { id: 'pulse_compare', kind: 'model', lesson: 1, title: '兩種完全重疊的比較', src: 'assets/img/doc/pulse_compare.png', author: '本教材自製（07B 圖片需求腳本）', license: '本教材自製', use: '第1節疊加原理說明與學生修訂預測。同向等大脈衝完全重疊時位移相加而增強；等大反向時完全重疊當下位移相消為 0；適用於理想線性介質，相消後兩脈衝仍各自傳播。' },
     { id: 'rope_ui_sketch', kind: 'figure', lesson: 1, title: '繩波疊加模擬介面草圖', src: 'assets/img/doc/rope_ui_sketch.png', author: '本教材自製（07B 模擬需求腳本）', license: '本教材自製', use: '教師端：模擬規格參照。' },
     { id: 'act01_sketch', kind: 'figure', lesson: 2, title: 'ACT01 畫面草圖', src: 'assets/img/doc/act01_sketch.png', author: '本教材自製（08 數位教材整合規劃表）', license: '本教材自製', use: '教師端：互動頁規格參照。' }
   ];

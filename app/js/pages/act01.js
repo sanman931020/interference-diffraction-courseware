@@ -5,6 +5,15 @@
   const { h } = UI;
   Pages.act01 = function (st, lesson) {
     const ws = Pages.wsById(st.ws);
+    /* 08 進入條件：先完成 Q1–Q3 及惠更斯原理閱讀，再進入解釋階段 */
+    const missing = (st.gate || []).filter(id => !Store.ans(id).done).map(id => { const w = Pages.wsById(id); const s2 = lesson.steps.find(x => x.ws && [].concat(x.ws).includes(id)); return { label: w.no + '　' + w.title, href: `#/lesson/${lesson.id}/${s2.id}` }; });
+    if (st.gateRead && !Store.done(st.gateRead)) { const s2 = lesson.steps.find(x => x.id === st.gateRead); missing.push({ label: '閱讀：' + COURSE.nodes[s2.node].title + '（完成讀完檢核）', href: `#/lesson/${lesson.id}/${s2.id}` }); }
+    if (missing.length && !Store.ans(st.ws).draftSaved) {
+      return h('div', { class: 'card', style: { maxWidth: '720px' } }, h('h3', null, '🔒 先完成前面的觀察與閱讀'),
+        h('p', null, '依活動設計，完成 Q1–Q3 與惠更斯原理閱讀後，才進入解釋階段。尚未完成：'),
+        h('ul', null, missing.map(m => h('li', null, h('a', { href: m.href }, m.label)))),
+        h('a', { class: 'btn primary', href: missing[0].href }, '前往：' + missing[0].label));
+    }
     const a = Store.ans(ws.id);
     const T = ws.table;
     const draft = a.draftTable ? a.draftTable.map(r => r.slice()) : T.rows.map(() => T.cols.map(() => null));
@@ -25,12 +34,12 @@
       tabs.querySelectorAll('button').forEach((b, i) => b.classList.toggle('on', i === k));
       if (ctl) { try { ctl.destroy(); } catch (e) { } ctl = null; }
       pane.replaceChildren();
-      Store.log(st.id, 'tab', { k: ['正文', '實拍', '模型'][k] });
-      if (k === 0) { const n = COURSE.nodes.N02; pane.append(h('div', { class: 'reading' }, n.body.map(p => h('p', { html: p }))), h('div', { class: 'q-fig', html: FIGS.get('huygens') })); }
+      Store.log(st.id, 'tab', { activity: 'ACT01', k: ['正文', '實拍', '模型'][k] });
+      if (k === 0) { const n = COURSE.nodes.N02; pane.append(h('div', { class: 'q-fig', html: FIGS.get('setupDS') }), h('div', { class: 'caption' }, '光的雙狹縫干涉實驗架構（空間位置示意）'), h('div', { class: 'reading', style: { marginTop: '10px' } }, n.body.map(p => h('p', { html: p }))), h('div', { class: 'q-fig', html: FIGS.get('huygens') })); }
       if (k === 1) pane.append(UI.img('doubleslit_red', { onOpen: () => Store.log(st.id, 'zoom', { id: 'doubleslit_red' }) }), UI.fb('info', '真實證據：可點圖放大，按 Esc 或背景關閉回到原頁。'));
       if (k === 2) {
         const s = h('div'); pane.append(s);
-        ctl = Pages.mountSim(s, 'doubleSlitModel', { onSelect: p => Store.log(st.id, 'select', { p }) }, st.id);
+        ctl = Pages.mountSim(s, 'doubleSlitModel', { onSelect: p => Store.log(st.id, 'select', { activity: 'ACT01', p }) }, st.id);
         pane.append(UI.fb('info', '這是模型，不是實拍。切換正文、實拍與模型，已填答案會保留。'));
       }
     };
@@ -57,17 +66,17 @@
       const locked = draftLocked();
       z2.replaceChildren(h('div', { class: 'card-title' }, h('span', { class: 'num' }, '2'), h('h3', { style: { margin: 0 } }, '我的初稿'), h('span', { class: 'spacer' }), locked ? savedChip : null),
         tableUI(draft, { locked, onPick: (i, j, k) => { draft[i][j] = k; Store.setAns(ws.id, { draftTable: draft }, { silent: true }); drawZ2(); drawZ3(); } }),
-        h('label', { class: 'field' }, '一句解釋'), sentenceIn,
+        h('label', { class: 'field' }, '解釋（2–3 句）'), sentenceIn,
         locked ? h('div', { class: 'muted', style: { fontSize: '.84rem', marginTop: '6px' } }, '初稿已保存，不再修改；請在 ④ 修訂。初稿與修訂分別保存。')
           : h('div', { class: 'row', style: { marginTop: '10px' } }, h('button', { class: 'btn primary', onclick: saveDraft }, '儲存初稿')), z2fb);
       sentenceIn.readOnly = locked;
     };
     sentenceIn.addEventListener('input', () => { sentence = sentenceIn.value; Store.setAns(ws.id, { draftSentence: sentence }, { silent: true }); drawZ3(); });
-    const complete = () => draft.every(r => r.every(x => x != null)) && sentence.trim().length >= 6;
+    const complete = () => draft.every(r => r.every(x => x != null)) && sentence.trim().length >= 15;
     function saveDraft() {
-      if (!complete()) { z2fb.replaceChildren(UI.fb('warn', '請先完成選項與解釋。')); return; }
-      Store.setAns(ws.id, { draftTable: draft, draftSentence: sentence, draft: draftText(draft, sentence), draftSaved: new Date().toISOString() });
-      Store.log(st.id, 'draft_save');
+      if (!complete()) { z2fb.replaceChildren(UI.fb('warn', '請先完成選項與解釋（2–3 句）。')); return; }
+      Store.setAns(ws.id, { activity: 'ACT01', draftTable: draft, draftSentence: sentence, draft: draftText(draft, sentence), draftSaved: new Date().toISOString() });
+      Store.log(st.id, 'draft_save', { activity: 'ACT01', q: 'Q4' });
       if (!Store.ans(ws.id).revTable) Store.setAns(ws.id, { revTable: draft.map(r => r.slice()), revision: sentence });
       drawAll();
     }
@@ -109,12 +118,12 @@
       const rt = Store.ans(ws.id).revTable;
       const right = rt.flat().filter((x, i) => x === T.answer.flat()[i]).length;
       Store.setAns(ws.id, { revision: revIn.value, reviseReason: reasonIn.value, tableScore: `${right}/6`, done: true, doneAt: new Date().toISOString() });
-      Store.log(st.id, 'complete', { tableScore: right });
+      Store.log(st.id, 'complete', { activity: 'ACT01', q: 'Q4', tableScore: right });
       Store.markDone(st.id); App.refreshNav();
       const cov = Tutor.coverage(revIn.value, ws.keywords);
       drawAll();
       z4fb.replaceChildren(UI.fb(right === 6 ? 'good' : 'warn', (right === 6 ? '表格判斷全部正確！' : `表格中有 ${6 - right} 格與模型不符（紅色）。你可以再修改後按「完成與下載」。`) +
-        `<br>解釋的關鍵要素覆蓋 ${Math.round(cov.ratio * 100)}%（自動初判，僅供參考）。<br><b>達成</b>的樣子：${ws.rubric.達成}`));
+        `<br>解釋的關鍵要素覆蓋 ${Math.round(cov.ratio * 100)}%（僅供自我檢核，最終由老師判讀）。<br>自我檢核：是否說明兩縫的光都到達？是否用相位關係連到亮或暗？是否區分實拍與模型？`));
       UI.modal({ title: '完成 ACT01', body: '已保存初稿與修訂。要現在下載本次作答嗎？', actions: [{ label: '稍後', value: 0 }, { label: '下載 JSON', value: 1, primary: true }] }).then(v => { if (v === 1) Store.exportJSON(); });
     };
 
@@ -123,10 +132,9 @@
       h('div', { class: 'act' }, z1, h('div', { class: 'right' }, z2, z3, z4)),
       h('div', { class: 'step-nav', style: { borderTop: 0, marginTop: '16px' } }, h('span', { class: 'muted' }, '初稿與修訂分別保存'), h('span', { class: 'spacer' }), h('button', { class: 'btn primary lg', onclick: finish }, '完成與下載')));
     function drawAll() { drawProg(); drawZ2(); drawZ3(); drawZ4(); }
-    drawAll(); showTab(2);
-    const hint = TEACH.diffs.find(d => d.key === st.diff);
-    root.append(h('details', { class: 'cond', style: { marginTop: '16px' } }, h('summary', null, '卡關了？分層提示（' + hint.name + '）'),
-      hint.ladder.L.map(L => h('p', { style: { marginTop: '8px' } }, h('b', null, L[0] + '　'), L[1], h('br'), h('small', { class: 'muted' }, '對照：' + L[2])))));
+    drawAll(); showTab(0);
+    const hint = Pages.diffHint(st.diff, st.id);
+    if (hint) { hint.style.marginTop = '16px'; root.append(hint); }
     return root;
   };
 })();

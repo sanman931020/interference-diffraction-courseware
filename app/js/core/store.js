@@ -72,12 +72,12 @@
       const flat = (v) => typeof v === 'object' ? JSON.stringify(v) : String(v ?? '');
       for (const [id, a] of Object.entries(r.answers)) for (const [k, v] of Object.entries(a)) {
         if (['createdAt', 'updatedAt'].includes(k) || (typeof v === 'string' && v.startsWith('data:image'))) continue;
-        rows.push([r.student.code, '作答', id, k, flat(v), a.updatedAt || '', r.version]);
+        rows.push([r.student.code, '作答', (a.activity ? a.activity + '／' : '') + id, k, flat(v), a.updatedAt || '', r.version]);
       }
       for (const [id, t] of Object.entries(r.tests)) rows.push([r.student.code, '評量', id, '得分', `${t.score}/${t.total}`, t.submittedAt || '', r.version]);
       for (const [id, h] of Object.entries(r.tutor)) h.forEach(m => rows.push([r.student.code, 'AI追問', id, m.role + (m.level ? '·' + m.level : ''), m.text, m.t, r.version]));
       for (const id of Object.keys(r.handoff)) rows.push([r.student.code, '轉教師', id, '標記', r.handoff[id].reason || '', r.handoff[id].t, r.version]);
-      r.logs.forEach(l => rows.push([r.student.code, '操作', l.step, l.action, flat(l.detail), l.t, r.version]));
+      r.logs.forEach(l => rows.push([r.student.code, '操作', (l.detail && l.detail.activity ? l.detail.activity + '／' : '') + l.step, l.action, flat(l.detail), l.t, r.version]));
       return rows;
     },
     exportCSV() {

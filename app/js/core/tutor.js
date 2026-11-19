@@ -135,30 +135,49 @@
     rule(setId, wsId, text) {
       const set = RULES[setId];
       const hist = Store.tutorHist(wsId).filter(m => m.role === 'ai');
-      if (ASK_ANSWER.test(text)) return { text: '先從你已有的觀察開始：實拍或模型中，哪一項特徵是你最需要解釋的？', level: '引導', kind: 'redirect' };
-      if (!set) return { text: '你的解釋引用了哪一項觀察？請把證據與推理連起來。', level: 'L1' };
+      /* 連續計數：從最近一則往回數，與這次同一個 key 的 AI 提示有幾則 */
+      const streak = key => { let n = 0; for (let i = hist.length - 1; i >= 0; i--) { if (hist[i].key === key) n++; else break; } return n; };
+      const HANDOFF = '我們已經一起試了兩層提示，這一點請老師來和你一起看。你的原稿與提示歷程都已保存，你仍可以修訂並完成活動。';
+      if (ASK_ANSWER.test(text)) return { text: '先從你已有的觀察開始：實拍或模型中，哪一項特徵是你最需要解釋的？', level: '引導', kind: 'redirect', key: 'redirect' };
+      if (!set) return { text: '你的解釋引用了哪一項觀察？請把證據與推理連起來。', level: 'L1', key: 'generic' };
+      /* 來源衝突：標示為模型／模擬，卻當成實拍或主要證據（08 停止與備援） */
+      if (/來源：模擬或模型|僅理想模型/.test(text) && /實拍|照片|證明/.test(text)) {
+        const n = streak('source');
+        if (n >= 2) return { text: HANDOFF, level: '轉教師', key: 'source', mis: 'source', misName: '證據來源衝突', handoff: true };
+        return { text: n ? '再對照一次：你標示的來源是模型，但句子裡把它當成實拍證據。哪一張才是屏幕的實際紀錄？' : '你的證據來源標示為模型或模擬，這能當作光的實驗證據嗎？', level: 'L' + (n + 1), key: 'source', mis: 'source', misName: '證據來源衝突' };
+      }
       for (const m of set.mis) {
         if (m.re.test(text)) {
-          const prev = hist.filter(x => x.mis === m.id).length;
-          const lv = Math.min(prev, 2);
-          const handoff = prev >= 2;
-          return { text: m.ladder[lv], level: 'L' + (lv + 1), mis: m.id, misName: m.name, handoff };
+          const n = streak(m.id);
+          if (n >= 2) return { text: HANDOFF, level: '轉教師', mis: m.id, misName: m.name, key: m.id, handoff: true };
+          return { text: m.ladder[n], level: 'L' + (n + 1), mis: m.id, misName: m.name, key: m.id };
         }
       }
       const missing = set.elements.filter(e => !has(text, e.kw));
       if (missing.length) {
-        const prevAsk = hist.filter(x => x.kind === 'element').length;
-        return { text: missing[0].ask, level: prevAsk ? 'L2' : 'L1', kind: 'element' };
+        const k = 'el:' + missing[0].kw[0];
+        const n = streak(k);
+        /* 同一要素連續追問兩次仍缺（多為缺證據）→ 轉教師 */
+        if (n >= 2) return { text: HANDOFF, level: '轉教師', kind: 'element', key: k, mis: k, misName: '缺少關鍵證據或環節', handoff: true };
+        return { text: n ? '再想一下剛才的問題：' + missing[0].ask : missing[0].ask, level: 'L' + (n + 1), kind: 'element', key: k };
       }
-      return { text: '你的解釋已包含主要環節。最後檢查：哪一句是觀察證據、哪一句是模型推理？確認後就可以完成修訂。', level: '確認', kind: 'ok' };
+      return { text: '你的解釋已包含主要環節。最後檢查：哪一句是觀察證據、哪一句是模型推理？確認後就可以完成修訂。', level: '確認', kind: 'ok', key: 'ok' };
+    },
+    /* 08：帶入資料＝題目、學生作答（呼叫時給）、操作紀錄、教材內容；不帶參考答案 */
+    context(ws) {
+      const lesson = COURSE.lessons.find(l => l.id === 'L' + ws.id[1]);
+      const node = lesson && COURSE.nodes[ws.id === 'L3Q3' || ws.id === 'L3Q4' || ws.id === 'L3Q5' ? 'N04' : lesson.node];
+      const strip = t => t.replace(/<[^>]+>/g, '');
+      const logs = (Store.rec.logs || []).filter(l => l.step && (l.step === ws.id || (lesson && lesson.steps.some(s => s.id === l.step)))).slice(-25)
+        .map(l => l.action + (l.detail && (l.detail.p || l.detail.id || l.detail.k) ? '(' + (l.detail.p || l.detail.id || l.detail.k) + ')' : '')).join('、');
+      return { prompt: ws.prompt, material: node ? strip(node.body.join(' ')) : '', logs };
     },
     async ask(setId, wsId, text, ctx = {}) {
-      const s = (Store.rec && Store.rec.settings) || {};
       const fb = this.rule(setId, wsId, text);
       const cfg = JSON.parse(localStorage.getItem('idr:ai') || 'null');
-      if (cfg && cfg.endpoint && !fb.kind?.startsWith('redirect')) {
+      if (cfg && cfg.endpoint && fb.kind !== 'redirect' && !fb.handoff) {
         try {
-          const sys = `你是高中物理「干涉與繞射」的追問助教。規則：1) 只問一個主問題，最多三句；2) 絕不提供可直接繳交的答案或結論（例如不可直接說「D點反相所以相消」）；3) 引導學生回看實拍證據與模型，區分實拍與模型；4) 使用繁體中文。題目：${ctx.prompt || ''}。教材重點：${ctx.key ? '（教師參考，不可透露）' + ctx.key : ''}。可參考的提示：${fb.text}`;
+          const sys = `你是高中物理「干涉與繞射」的追問助教。規則：1) 只問一個主問題，最多三句；2) 絕不提供可直接繳交的答案或結論（例如不可直接說「D點反相所以相消」）；3) 引導學生回看實拍證據與模型，區分實拍與模型；4) 使用繁體中文。題目：${ctx.prompt || ''}。教材內容：${ctx.material || ''}。學生操作紀錄：${ctx.logs || '無'}。可參考的追問：${fb.text}`;
           const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 15000);
           const r = await fetch(cfg.endpoint, { method: 'POST', signal: ctl.signal, headers: Object.assign({ 'Content-Type': 'application/json' }, cfg.key ? { Authorization: 'Bearer ' + cfg.key } : {}),
             body: JSON.stringify({ model: cfg.model || 'llama3.1', stream: false, messages: [{ role: 'system', content: sys }, { role: 'user', content: '學生作答：' + text }] }) });

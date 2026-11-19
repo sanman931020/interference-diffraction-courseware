@@ -97,6 +97,7 @@
     const E = TEACH.ext;
     const res = (title, list) => h('div', { class: 'card' }, h('h3', null, title), h('div', { class: 'stack' }, list.map(r => h('div', { class: 'card flat' }, h('div', { class: 'row' }, h('b', null, r.name), h('span', { class: 'spacer' }), r.url ? h('a', { class: 'btn sm', href: r.url, target: '_blank', rel: 'noopener' }, '開啟來源 ↗') : UI.chip('', '紙本教材')), h('p', { style: { margin: '6px 0' } }, r.sum), h('div', { class: 'muted', style: { fontSize: '.82rem' } }, r.src + '｜' + r.use)))));
     UI.fill(root, h('h1', null, '延伸學習'), h('p', { class: 'muted' }, '高一定性理解 → 高中量化 → 大一波動光學。' + E.note),
+      h('div', { class: 'card', style: { marginBottom: '16px' } }, h('table', { class: 'doc-table' }, [['領域／科目', '自然科學／物理'], ['單元名稱', '干涉與繞射'], ['目前年段', '高一'], ['授課節數', '3節，每節50分鐘'], ['核心概念', E.core]].map(r => h('tr', null, h('th', null, r[0]), h('td', null, r[1]))))),
       h('div', { class: 'card table-scroll' }, h('table', { class: 'doc-table' }, h('tr', null, h('th', null, '規劃面向'), h('th', null, '目前單元'), h('th', null, '第一進階年段'), h('th', null, '第二進階年段')), E.stages.map(r => h('tr', null, h('th', null, r[0]), r.slice(1).map(c => h('td', null, c)))))),
       h('div', { class: 'grid g2', style: { marginTop: '16px' } }, res('第一進階年段　高中量化', E.res1), res('第二進階年段　大一波動光學', E.res2)),
       h('h2', { style: { marginTop: '26px' } }, '延伸現象圖庫'),

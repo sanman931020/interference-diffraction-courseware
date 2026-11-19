@@ -108,8 +108,8 @@ window.COURSE = {
       },
       steps: [
         { id: '1-0', kind: 'scenario', title: '案件簡報', time: '課前' },
-        { id: '1-1', kind: 'ws', ws: ['L1Q1'], title: '先預測：脈衝相遇', time: '0–5 分', panel: { fig: 'pulseMeet' }, diff: '碰撞' },
-        { id: '1-2', kind: 'ws', ws: ['L1Q2'], title: '觀察：疊加動畫', time: '5–15 分', requires: 'L1Q1', panel: { sim: 'superposeAnim', after: { img: 'pulse_compare' } } },
+        { id: '1-1', kind: 'ws', ws: ['L1Q1'], title: '先預測：脈衝相遇', time: '0–5 分', panel: { fig: 'pulseMeet' } },
+        { id: '1-2', kind: 'ws', ws: ['L1Q2'], title: '觀察：疊加動畫', time: '5–15 分', requires: 'L1Q1', panel: { sim: 'superposeAnim', after: { img: 'pulse_compare', note: '同向等大脈衝完全重疊時位移相加而增強（+1＋1＝+2）；等大反向時完全重疊當下位移相消為 0。此為理想線性介質中的模型示意，相消後兩脈衝仍各自傳播。' } } },
         { id: '1-3', kind: 'ws', ws: ['L1Q3'], title: '操作：繩波疊加模擬', time: '15–22 分', panel: { sim: 'rope' }, diff: '碰撞' },
         { id: '1-4', kind: 'read', node: 'N01', title: '閱讀：疊加與干涉', time: '自學' },
         { id: '1-5', kind: 'ws', ws: ['L1Q4'], title: '先預測：水面 A、B 點', time: '22–27 分', panel: { fig: 'waterAB' }, diff: '位移振幅' },
@@ -138,12 +138,12 @@ window.COURSE = {
           ] },
         { id: '2-2', kind: 'gallery', title: '認識裝置與安全', time: '8–10 分', images: ['bench_kit', 'bench_setup'], fig: 'setupDS',
           note: '照片僅供認識器材，不是本次實驗組。<b>雷射安全</b>：由教師固定光路，不直視光束、不指向他人或鏡面；調整前先關閉光源。' },
-        { id: '2-3', kind: 'ws', ws: ['L2Q1'], title: '先預測：屏幕圖樣', time: '10–15 分', panel: { fig: 'dsPredict' }, diff: '模型實拍' },
-        { id: '2-4', kind: 'ws', ws: ['L2Q2'], title: '觀察：紅光實拍', time: '15–24 分', requires: 'L2Q1', panel: { img: 'doubleslit_red', evidence: true } },
+        { id: '2-3', kind: 'ws', ws: ['L2Q1'], title: '先預測：屏幕圖樣', time: '10–15 分', panel: { fig: 'dsPredict' } },
+        { id: '2-4', kind: 'ws', ws: ['L2Q2'], title: '觀察：紅光實拍', time: '15–24 分', requires: 'L2Q1', panel: { img: 'doubleslit_red', evidence: true }, diff: '模型實拍' },
         { id: '2-5', kind: 'ws', ws: ['L2Q3'], title: '比較：預測與觀察', time: '24–32 分', requires: 'L2Q1', panel: { sim: 'doubleSlitPattern', note: '模擬只協助辨認規律；主要證據是剛才的實拍。' } },
-        { id: '2-6', kind: 'read', node: 'N02', fig: 'huygens', title: '閱讀：惠更斯原理', time: '自學' },
-        { id: '2-7', kind: 'act01', ws: 'L2Q4', title: 'ACT01 解釋亮暗紋', time: '32–45 分', diff: '暗紋無光' },
-        { id: '2-8', kind: 'ws', ws: ['L2Q5'], title: '比較：水波與光', time: '45–47 分' },
+        { id: '2-6', kind: 'read', node: 'N02', fig: ['huygens', 'bdModel'], title: '閱讀：惠更斯原理', time: '自學' },
+        { id: '2-7', kind: 'act01', ws: 'L2Q4', activity: 'ACT01', gate: ['L2Q1', 'L2Q2', 'L2Q3'], gateRead: '2-6', title: 'ACT01 解釋亮暗紋', time: '32–45 分', diff: '暗紋無光' },
+        { id: '2-8', kind: 'ws', ws: ['L2Q5'], title: '比較：水波與光', time: '45–47 分', panel: { mine: ['L1Q7', 'L2Q2', 'L2Q4'] } },
         { id: '2-9', kind: 'ws', ws: ['L2Q6'], title: '完整解釋與存檔', time: '47–50 分', wrap: true, panel: { img: 'doubleslit_red' } },
         { id: '2-10', kind: 'quiz', test: 'quiz2', title: '隨堂測驗', time: '課後' }
       ]
@@ -169,17 +169,17 @@ window.COURSE = {
             { text: '理想光強度曲線在中央附近有近似等距的峰。', ans: 2 }
           ],
           bins: ['光學實拍（證據）', '水波類比', '模型（解釋）'] },
-        { id: '3-2', kind: 'gallery', title: '觀察：單狹縫繞射', time: '8–13 分', images: ['singleslit_blue', 'slit_adjustable'], fig: 'setupSS', sim: 'singleSlit',
+        { id: '3-2', kind: 'gallery', title: '觀察：單狹縫繞射', time: '8–13 分', images: ['singleslit_blue', 'slit_adjustable', 'bench_setup'], fig: 'setupSS', sim: 'singleSlit',
           note: '先看實拍（證據），再看下方理想模型。器材照片的尺度不代表課堂狹縫尺度。' },
         { id: '3-3', kind: 'read', node: 'N03', title: '閱讀：單狹縫繞射', time: '自學' },
         { id: '3-4', kind: 'ws', ws: ['L3Q1'], title: '比較：單縫與雙縫', time: '13–18 分', panel: { fig: 'subsources', sim: 'singleSlit', opts: { compare: true } }, diff: '干涉繞射無關' },
-        { id: '3-5', kind: 'ws', ws: ['L3Q2'], title: '預測與驗證：縫寬', time: '延伸 5 分', panel: { sim: 'singleSlit', opts: { mode: 'advanced' } } },
+        { id: '3-5', kind: 'ws', ws: ['L3Q2'], title: '預測與驗證：縫寬', time: '延伸（選用）', panel: { sim: 'singleSlit', opts: { mode: 'advanced' } } },
         { id: '3-6', kind: 'gallery', title: '觀察：薄膜的色彩', time: '18–22 分', images: ['soap_bubble', 'soap_film', 'oil_film'], note: '肥皂水本身沒有彩色顏料。請注意色帶的分布與膜的厚薄。' },
         { id: '3-7', kind: 'ws', ws: ['L3Q3'], title: '解釋：兩路反射光', time: '22–28 分', panel: { sim: 'thinFilm' } },
-        { id: '3-8', kind: 'ws', ws: ['L3Q4'], title: '生活現象分類', time: '新情境' },
+        { id: '3-8', kind: 'ws', ws: ['L3Q4'], title: '生活現象分類', time: '新情境（課後）' },
         { id: '3-9', kind: 'read', node: 'N04', title: '閱讀：薄膜與統整', time: '自學' },
-        { id: '3-10', kind: 'aicheck', title: '查核 AI 的回饋', time: '28–33 分' },
-        { id: '3-11', kind: 'ws', ws: ['L3Q5'], title: '統整論證與反思', time: '33–50 分', wrap: true, panel: { gallery: ['doubleslit_red', 'singleslit_blue'] } },
+        { id: '3-10', kind: 'aicheck', title: '查核 AI 的回饋', time: '課後（選用）' },
+        { id: '3-11', kind: 'ws', ws: ['L3Q5'], title: '統整論證與反思', time: '28–50 分', wrap: true, panel: { gallery: ['doubleslit_red', 'singleslit_blue'] } },
         { id: '3-12', kind: 'quiz', test: 'quiz3', title: '隨堂測驗', time: '課後' }
       ]
     }

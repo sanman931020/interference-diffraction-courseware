@@ -113,13 +113,13 @@
       const typing = h('div', { class: 'msg ai' }, h('span', { class: 'typing' }, h('i'), h('i'), h('i')));
       body.append(typing); body.scrollTop = body.scrollHeight;
       askBtn.disabled = true;
-      const r = await Tutor.ask(ws.tutor, ws.id, text, { prompt: ws.prompt, key: ws.key });
+      const r = await Tutor.ask(ws.tutor, ws.id, text, Tutor.context(ws));
       await new Promise(res => setTimeout(res, 450));
       if (r.note) hist.push({ role: 'sys', text: r.note, t: new Date().toISOString() });
-      hist.push({ role: 'ai', text: r.text, level: r.level, mis: r.mis, misName: r.misName, kind: r.kind, source: r.source, t: new Date().toISOString() });
+      hist.push({ role: 'ai', text: r.text, level: r.level, key: r.key, mis: r.mis, misName: r.misName, kind: r.kind, source: r.source, t: new Date().toISOString() });
       if (r.handoff && !Store.rec.handoff[ws.id]) {
-        Store.rec.handoff[ws.id] = { t: new Date().toISOString(), reason: '連續兩層提示仍卡在「' + r.misName + '」' };
-        hist.push({ role: 'sys', text: '已連續兩層提示仍卡在同一個想法，系統已標記「轉教師」，老師會來協助你。你的原稿與提示歷程都已保存。', t: new Date().toISOString() });
+        Store.rec.handoff[ws.id] = { t: new Date().toISOString(), reason: '連續兩層提示後仍卡在「' + r.misName + '」' };
+        hist.push({ role: 'sys', text: '系統已標記「轉教師」（' + r.misName + '）。', t: new Date().toISOString() });
       }
       Store.log(ws.id, 'ai_ask', { level: r.level, mis: r.mis || null, source: r.source });
       Store.save(); render(); onAsk && onAsk(r);
@@ -163,8 +163,8 @@
       Store.log(ws.id, 'complete');
       const cov = ws.keywords ? Tutor.coverage(rev.value, ws.keywords) : null;
       const msgs = [];
-      if (cov) msgs.push(`關鍵要素覆蓋：<b>${Math.round(cov.ratio * 100)}%</b>（自動初判「${cov.level}」，僅供參考，最終由老師依成功規準判讀）。`);
-      if (ws.rubric) msgs.push(`<b>達成</b>的樣子：${ws.rubric.達成}`);
+      if (cov) msgs.push(`關鍵要素覆蓋：<b>${Math.round(cov.ratio * 100)}%</b>（僅供自我檢核，最終由老師判讀）。`);
+      msgs.push('自我檢核：我的解釋是否引用了觀察證據？是否用原理把證據連到結論？是否寫出成立條件？');
       fbBox.replaceChildren(UI.fb(cov && cov.level === '達成' ? 'good' : 'info', msgs.join('<br>') || '已完成。'));
       doneBtn.textContent = '已完成 ✓ 更新';
       onComplete && onComplete();
@@ -186,15 +186,18 @@
     const reason = h('textarea', { rows: 3, placeholder: '寫出一項理由', readonly: a.locked ? true : null }, a.reason || '');
     const fb = h('div');
     const ch = C.choice(ws.options, { value: pick, locked: a.locked, onPick: i => { pick = i; ch.update(i); } });
+    const pd = Object.assign({}, a.padDraws || {});
+    const padBox = ws.pads ? h('div', { class: 'grid g2' }, ws.pads.map(lb => h('div', null, h('div', { class: 'muted', style: { fontSize: '.85rem', fontWeight: 700 } }, lb),
+      C.pad({ label: '畫出繩形', value: pd[lb], guide: 'rope', height: 130, readonly: a.locked, onChange: d => { pd[lb] = d; } })))) : null;
     const btn = h('button', { class: 'btn primary', type: 'button', disabled: a.locked ? true : null }, a.locked ? '預測已鎖定' : '送出預測（送出後鎖定）');
     btn.onclick = () => {
-      if (pick == null || !reason.value.trim()) { fb.replaceChildren(UI.fb('warn', '請先勾選並寫出一項理由。')); return; }
-      done(ws, { choice: pick, choiceText: ws.options[pick], reason: reason.value.trim(), locked: true });
+      if (pick == null || !reason.value.trim() || (ws.pads && ws.pads.some(lb => !pd[lb]))) { fb.replaceChildren(UI.fb('warn', ws.pads ? '請勾選、畫出兩張預測圖，並寫出一項理由。' : '請先勾選並寫出一項理由。')); return; }
+      done(ws, { choice: pick, choiceText: ws.options[pick], reason: reason.value.trim(), locked: true, padDraws: ws.pads ? pd : undefined });
       ch.update(pick); btn.disabled = true; btn.textContent = '預測已鎖定'; reason.readOnly = true;
       fb.replaceChildren(UI.fb('info', '預測已保存！預測不計分；接下來用觀察來檢驗它。'));
       ctx.onDone();
     };
-    return h('div', { class: 'stack' }, ch, h('label', { class: 'field' }, ws.reasonLabel || '理由'), reason, h('div', { class: 'row' }, btn), fb);
+    return h('div', { class: 'stack' }, ch, padBox ? h('label', { class: 'field' }, '畫出你的預測（深色線＝繩子）') : null, padBox, h('label', { class: 'field' }, ws.reasonLabel || '理由'), reason, h('div', { class: 'row' }, btn), fb);
   };
 
   R.predictAB = (ws, ctx) => {
@@ -213,8 +216,10 @@
 
   R.draw3 = (ws, ctx) => {
     const a = Store.ans(ws.id); const draws = Object.assign({}, a.draws || {}); const checks = Object.assign({}, a.checks || {});
-    const pads = h('div', { class: 'grid g3' }, ws.frames.map(f => h('div', null, h('div', { class: 'muted', style: { fontSize: '.85rem', fontWeight: 700 } }, f),
-      C.pad({ label: '合成繩形', value: draws[f], guide: 'rope', height: 130, onChange: d => { draws[f] = d; Store.setAns(ws.id, { draws }, { silent: true }); } }))));
+    const cases = ws.cases || [''];
+    const keyOf = (c, f) => (c ? c + '｜' : '') + f;
+    const pads = h('div', { class: 'stack' }, cases.map(c => h('div', null, c ? h('b', null, c) : null, h('div', { class: 'grid g3' }, ws.frames.map(f => h('div', null, h('div', { class: 'muted', style: { fontSize: '.85rem', fontWeight: 700 } }, f),
+      C.pad({ label: '合成繩形', value: draws[keyOf(c, f)], guide: 'rope', height: 120, onChange: d => { draws[keyOf(c, f)] = d; Store.setAns(ws.id, { draws }, { silent: true }); } })))))));
     const ckEls = ws.checks.map((c, k) => {
       const fb = h('div');
       const ch = C.choice(c.options, { value: checks[k] ?? null, answer: c.answer, show: checks[k] != null, retry: true,
@@ -225,7 +230,7 @@
     const fb = h('div');
     const btn = h('button', { class: 'btn primary', type: 'button' }, '完成本題');
     btn.onclick = () => {
-      if (Object.keys(draws).length < 3 || ws.checks.some((_, k) => checks[k] == null)) { fb.replaceChildren(UI.fb('warn', '請畫完三個時刻並回答兩個小題。')); return; }
+      if (cases.some(c => ws.frames.some(f => !draws[keyOf(c, f)])) || ws.checks.some((_, k) => checks[k] == null)) { fb.replaceChildren(UI.fb('warn', `請畫完 ${cases.length * ws.frames.length} 格（每個案例三個時刻）並回答兩個小題。`)); return; }
       done(ws, { draws, checks }); fb.replaceChildren(UI.fb('good', '已完成！可對照左側「兩種完全重疊的比較」圖修訂你的畫。')); ctx.onDone();
     };
     return h('div', { class: 'stack' }, pads, ckEls, h('div', { class: 'row' }, btn), fb);
@@ -326,17 +331,19 @@
 
   R.predictDraw = (ws, ctx) => {
     const a = Store.ans(ws.id); let pick = a.choice ?? null; let drawing = a.drawing || null;
-    const ch = C.choice(ws.options, { value: pick, locked: a.locked, onPick: i => { pick = i; ch.update(i); } });
+    const other = h('input', { type: 'text', placeholder: '其他：請描述', value: a.other || '', readonly: a.locked ? true : null, style: { display: pick === ws.otherIndex ? '' : 'none' } });
+    const ch = C.choice(ws.options, { value: pick, locked: a.locked, onPick: i => { pick = i; ch.update(i); other.style.display = i === ws.otherIndex ? '' : 'none'; } });
     const pad = C.pad({ label: '屏幕（深色＝暗，留白＝亮）', value: drawing, readonly: a.locked, height: 150, onChange: d => { drawing = d; } });
     const reason = h('textarea', { rows: 2, readonly: a.locked ? true : null }, a.reason || '');
     const fb = h('div');
     const btn = h('button', { class: 'btn primary', type: 'button', disabled: a.locked ? true : null }, a.locked ? '預測已鎖定' : '送出預測（送出後才揭示屏幕）');
     btn.onclick = () => {
       if (pick == null || !drawing || !reason.value.trim()) { fb.replaceChildren(UI.fb('warn', '請勾選、畫出屏幕預測，並寫一項理由。')); return; }
-      done(ws, { choice: pick, choiceText: ws.options[pick], drawing, reason: reason.value.trim(), locked: true });
+      if (pick === ws.otherIndex && !other.value.trim()) { fb.replaceChildren(UI.fb('warn', '你選了「其他」，請寫出你的描述。')); return; }
+      done(ws, { choice: pick, choiceText: pick === ws.otherIndex ? '其他：' + other.value.trim() : ws.options[pick], other: other.value.trim(), drawing, reason: reason.value.trim(), locked: true });
       btn.disabled = true; btn.textContent = '預測已鎖定'; fb.replaceChildren(UI.fb('info', '預測已保存！請保留初稿，等觀察後再比較。')); ctx.onDone();
     };
-    return h('div', { class: 'stack' }, ch, h('label', { class: 'field' }, '我的屏幕圖樣預測'), pad, h('label', { class: 'field' }, ws.reasonLabel), reason, h('div', { class: 'row' }, btn), fb);
+    return h('div', { class: 'stack' }, ch, other, h('label', { class: 'field' }, '我的屏幕圖樣預測'), pad, h('label', { class: 'field' }, ws.reasonLabel), reason, h('div', { class: 'row' }, btn), fb);
   };
 
   R.observe = (ws, ctx) => {

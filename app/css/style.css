@@ -352,3 +352,4 @@ body.projector .content { max-width: none; font-size: 1.15rem; }
 .app .watermark { left: var(--side-w); }
 @media (max-width: 960px) { .app .watermark { left: 0; } }
 .watermark-sign { font-family: "Great Vibes", "Segoe Script", cursive; font-size: 1.5rem; opacity: .5; text-align: right; margin-top: 8px; }
+@media (max-width: 640px) { .watermark span { font-size: 27px; } }
